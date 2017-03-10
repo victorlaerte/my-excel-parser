@@ -1,23 +1,39 @@
 package com.victorlaerte.myexcelparser;
 
+import com.victorlaerte.myexcelparser.service.GetVersionTask;
+import com.victorlaerte.myexcelparser.util.Dialog;
+import java.awt.Desktop;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.Stage;
+import javax.swing.filechooser.FileSystemView;
 import org.apache.poi.EncryptedDocumentException;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -31,39 +47,130 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
  */
 public class FXMLDocumentController implements Initializable {
     
-    private String directory = "C:\\Users\\victo\\Desktop\\bse";
-    private final String IDENTIFIER = "BSE";
+    private final String DEFAULT_DIR = FileSystemView.getFileSystemView().getDefaultDirectory().getPath();
+    private final String DEFAULT_IDENTIFIER = "BSE";
     private final String EXTENSION = ".XLS";
-    private final String SHEET_NAME = "BMP";
+    private final String DEFAULT_SHEET_NAME = "BMP";
     private final String ITEM = "ITEM";
+    private final String QTY = "QUANTIDADE";
+    private final String PREFIX_OUTPUT_FILE_NAME = "Total - ";
     private final int MAX_ATTEMPT_GET_CELL = 4;
+    private Stage stage;
     
     @FXML
-    private Label label;
+    private TextField dirTxtField;
+    @FXML
+    private TextField identifierTxtField;
+    @FXML
+    private TextField sheetNameTxtField;
     
     @FXML
-    private void handleButtonAction(ActionEvent event) {
+    private void handleButtonStart(ActionEvent event) {
         
-        
-    }
-    
-    @Override
-    public void initialize(URL url, ResourceBundle rb) {
-        
-        File dir = new File(directory);
+        File dir = new File(dirTxtField.getText());
         
         List<File> xlsFileList = getExcelFiles(dir);
         
         Map<String, Integer> tableKeyValue = getTableKeyValue(xlsFileList);
         
+        createNewExcelFile(dir, tableKeyValue);
+    }
+    
+    @FXML
+    private void handleButtonChooseDir(ActionEvent event) {
+        
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Selecione um diretório para iniciar");
+        File selectedDirectory = chooser.showDialog(stage);
+        
+        if (selectedDirectory != null) {
+            
+            dirTxtField.setText(selectedDirectory.getAbsolutePath());
+        }
+    }
+    
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+    
+    @Override
+    public void initialize(URL url, ResourceBundle rb) {
+        
+        dirTxtField.setText(DEFAULT_DIR);
+        identifierTxtField.setText(DEFAULT_IDENTIFIER);
+        sheetNameTxtField.setText(DEFAULT_SHEET_NAME);
+        
+        GetVersionTask getVersionTask = new GetVersionTask(this);
+        getVersionTask.execute();
+    }
+
+    private void createNewExcelFile(File dir, Map<String, Integer> tableKeyValue) {
+        
+        HSSFWorkbook workbook = new HSSFWorkbook();
+        
+        HSSFSheet sheet = workbook.createSheet(sheetNameTxtField.getText());
+        
+        int rowNum = 0;
+        Row row = sheet.createRow(rowNum++);
+        
+        createHeader(row);
+        
         for (Map.Entry<String, Integer> entry : tableKeyValue.entrySet()) {
+            
+            HSSFRow currentRow = sheet.createRow(rowNum++);
             
             String key = entry.getKey();
             
             Integer value = entry.getValue();
             
             System.out.println(key + " " + value);
+            
+            HSSFCell firstColumn = currentRow.createCell(0);
+            firstColumn.setCellValue(key);
+            
+            HSSFCell secondColumn = currentRow.createCell(1);
+            secondColumn.setCellValue(value);
         }
+        
+        try {
+            writeFile(dir, workbook);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void writeFile(File dir, HSSFWorkbook workbook) throws IOException {
+            
+        FileOutputStream outputStream = null;
+                
+        try {
+            
+            Date now = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+            String formatedDate = sdf.format(now);
+            
+            String outputFileName = dir + File.separator + PREFIX_OUTPUT_FILE_NAME + formatedDate + EXTENSION.toLowerCase();
+            
+            outputStream = new FileOutputStream(outputFileName);
+            workbook.write(outputStream);
+            
+        } finally {
+            
+            if (outputStream != null) {
+                
+                outputStream.close();
+            }
+            workbook.close();
+        }
+    }
+
+    private void createHeader(Row row) {
+        
+        Cell firstColumn = row.createCell(0);
+        firstColumn.setCellValue(ITEM);
+        
+        Cell secondColumn = row.createCell(1);
+        secondColumn.setCellValue(QTY);
     }
 
     private Map<String, Integer> getTableKeyValue(List<File> xlsFileList) throws NumberFormatException, EncryptedDocumentException {
@@ -83,7 +190,7 @@ public class FXMLDocumentController implements Initializable {
                 
                 Workbook workbook = WorkbookFactory.create(fsXls);
                 
-                Sheet sheet = workbook.getSheet(SHEET_NAME);
+                Sheet sheet = workbook.getSheet(sheetNameTxtField.getText());
                 
                 Iterator<Row> iterator = sheet.iterator();
                 
@@ -201,7 +308,7 @@ public class FXMLDocumentController implements Initializable {
                 
                 String fileName = listFile.getName().toUpperCase();
                 
-                if (fileName.contains(IDENTIFIER) && fileName.contains(EXTENSION)) {
+                if (fileName.contains(identifierTxtField.getText()) && fileName.contains(EXTENSION)) {
                     
                     xlsFileList.add(listFile);
                 }
@@ -209,5 +316,40 @@ public class FXMLDocumentController implements Initializable {
         }
         
         return xlsFileList;
+    }
+    
+       public void newVersionFound(final Map<String, String> version, String message) {
+
+        String updateMessage = "";
+
+        if (message != null && !message.trim().equals("")) {
+
+            updateMessage = message;
+        }
+
+           Dialog.buildConfirmation("Nova Versão", "Existe uma nova versão disponível. Deseja instala-la agora? " + updateMessage)
+                .addYesButton(new EventHandler() {
+                    
+                    @Override
+                    public void handle(Event t) {
+                        
+                        String url = "http://target.facilit.com.br/TargetAppSetup64-bit.exe";
+
+                        if (!url.equals("")) {
+
+                            URI uri;
+                            try {
+                                uri = new URI(url);
+                                Desktop.getDesktop().browse(uri);
+                                Platform.exit();
+                            } catch (URISyntaxException | IOException ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    }
+                })
+                .addNoButton(null)
+                .build()
+                .show();
     }
 }

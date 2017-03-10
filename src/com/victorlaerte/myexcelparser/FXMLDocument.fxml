@@ -6,9 +6,16 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane id="AnchorPane" prefHeight="200" prefWidth="320" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.victorlaerte.myexcelparser.FXMLDocumentController">
+<AnchorPane id="AnchorPane" prefHeight="323.0" prefWidth="613.0" style="-fx-background-color: #d1efff;" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8" fx:controller="com.victorlaerte.myexcelparser.FXMLDocumentController">
     <children>
-        <Button layoutX="126" layoutY="90" text="Click Me!" onAction="#handleButtonAction" fx:id="button" />
-        <Label layoutX="126" layoutY="120" minHeight="16" minWidth="69" fx:id="label" />
+        <Button fx:id="button" layoutX="213.0" layoutY="233.0" onAction="#handleButtonStart" prefHeight="69.0" prefWidth="187.0" text="Inciar" />
+        <Label fx:id="label" layoutX="126" layoutY="120" minHeight="16" minWidth="69" />
+      <Label layoutX="14.0" layoutY="25.0" text="Pesquisar arquivos em:" />
+      <TextField fx:id="dirTxtField" editable="false" layoutX="14.0" layoutY="59.0" prefHeight="31.0" prefWidth="419.0" />
+      <Button layoutX="440.0" layoutY="59.0" mnemonicParsing="false" onAction="#handleButtonChooseDir" text="Selecionar Diretório" />
+      <Label layoutX="14.0" layoutY="118.0" text="Arquivos com nome semelhantes a:" />
+      <TextField fx:id="identifierTxtField" layoutX="261.0" layoutY="113.0" />
+      <Label layoutX="14.0" layoutY="174.0" text="Somar valores da tabela:" />
+      <TextField fx:id="sheetNameTxtField" layoutX="190.0" layoutY="169.0" />
     </children>
 </AnchorPane>

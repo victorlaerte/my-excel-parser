@@ -19,12 +19,18 @@ public class MyExcelParser extends Application {
     
     @Override
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("FXMLDocument.fxml"));
+        
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLDocument.fxml"));
+        
+        Parent root = (Parent) loader.load();
         
         Scene scene = new Scene(root);
         
         stage.setScene(scene);
         stage.show();
+        
+        FXMLDocumentController controller = (FXMLDocumentController)loader.getController();
+        controller.setStage(stage);
     }
 
     /**
