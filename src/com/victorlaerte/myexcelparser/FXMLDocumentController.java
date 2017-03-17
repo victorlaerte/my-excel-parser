@@ -1,6 +1,5 @@
 package com.victorlaerte.myexcelparser;
 
-import com.victorlaerte.myexcelparser.service.GetVersionTask;
 import com.victorlaerte.myexcelparser.util.Dialog;
 import java.awt.Desktop;
 import java.io.File;
@@ -100,8 +99,6 @@ public class FXMLDocumentController implements Initializable {
         identifierTxtField.setText(DEFAULT_IDENTIFIER);
         sheetNameTxtField.setText(DEFAULT_SHEET_NAME);
         
-        GetVersionTask getVersionTask = new GetVersionTask(this);
-        getVersionTask.execute();
     }
 
     private void createNewExcelFile(File dir, Map<String, Integer> tableKeyValue) {
@@ -149,7 +146,9 @@ public class FXMLDocumentController implements Initializable {
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
             String formatedDate = sdf.format(now);
             
-            String outputFileName = dir + File.separator + PREFIX_OUTPUT_FILE_NAME + formatedDate + EXTENSION.toLowerCase();
+            String outputFileName = dir + File.separator + PREFIX_OUTPUT_FILE_NAME + formatedDate;
+            
+            outputFileName = getUniqueFileName(outputFileName, 1);
             
             outputStream = new FileOutputStream(outputFileName);
             workbook.write(outputStream);
@@ -162,6 +161,27 @@ public class FXMLDocumentController implements Initializable {
             }
             workbook.close();
         }
+    }
+    
+    private String getUniqueFileName(String originalFilePath, int equalFileCount) {
+     
+        String newFilePath = originalFilePath + EXTENSION.toLowerCase();
+        
+        File file = new File(newFilePath);
+        
+        if (file.exists()) {
+            
+            newFilePath = originalFilePath + "(" + equalFileCount + ")" + EXTENSION.toLowerCase();
+            
+            File newFile = new File(newFilePath);
+            
+            if (newFile.exists()) {
+                
+                newFilePath = getUniqueFileName(originalFilePath, ++equalFileCount);
+            }
+        }
+        
+        return newFilePath;
     }
 
     private void createHeader(Row row) {
@@ -333,7 +353,7 @@ public class FXMLDocumentController implements Initializable {
                     @Override
                     public void handle(Event t) {
                         
-                        String url = "http://target.facilit.com.br/TargetAppSetup64-bit.exe";
+                        String url = "https://dl.dropboxusercontent.com/content_link/QHP2de32UAKpNA01CvbLeQkLxNYAUipd6iyfsRP3sIVScd47aWEmU7jpYRH1fb80/file?dl=1";
 
                         if (!url.equals("")) {
 
